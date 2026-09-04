@@ -2,11 +2,16 @@ import os
 from groq import Groq
 
 class ResponseAgent:
-    def __init__(self, mode="llm", model="llama-3.3-70b-versatile"):
+    def __init__(self, mode="llm", model="openai/gpt-oss-20b"):
         self.mode = mode
         self.model = model
         if mode == "llm":
-            self.client = Groq(api_key=os.environ["GROQ_API_KEY"])
+            api_key = os.environ.get("GROQ_API_KEY")
+            if not api_key:
+                print("[ResponseAgent] WARNING: GROQ_API_KEY not set — falling back to template mode.")
+                self.mode = "template"
+            else:
+                self.client = Groq(api_key=api_key)
 
     def draft_reply(self, customer_name, product, ticket_description, kb_answer):
         if self.mode == "template":
