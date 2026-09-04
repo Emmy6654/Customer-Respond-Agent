@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EEF1F4;
+    --card: #FFFFFF;
+    --ink: #1B1F3B;
+    --ink-soft: #565B7A;
+    --indigo: #3A4B8C;
+    --indigo-dark: #2C3A6E;
+    --teal: #2F9E68;
+    --teal-bg: #E4F5EC;
+    --rust: #C1502E;
+    --rust-bg: #FBEAE4;
+    --line: #DADEE6;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; line-height: 1.5; }
+  header { padding: 40px 32px 24px; max-width: 1100px; margin: 0 auto; }
+  header h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { color: var(--ink-soft); margin: 0; max-width: 60ch; font-size: 15px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 8px 32px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 20px; color: var(--ink); }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 6px; }
+  .field { margin-bottom: 18px; }
+  input[type="text"], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px; color: var(--ink); background: #FCFCFD; transition: border-color 0.15s ease; }
+  input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(58, 75, 140, 0.12); }
+  textarea { resize: vertical; min-height: 96px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  button { width: 100%; background: var(--indigo); color: white; border: none; border-radius: 8px; padding: 12px 16px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s ease; }
+  button:hover { background: var(--indigo-dark); }
+  button:disabled { background: #B7BEDA; cursor: not-allowed; }
+  .trail { display: flex; flex-direction: column; gap: 0; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; opacity: 0.35; transition: opacity 0.25s ease; }
+  .step.active { opacity: 1; }
+  .step-marker { display: flex; flex-direction: column; align-items: center; }
+  .step-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--line); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+  .step.active .step-dot { background: var(--indigo); }
+  .step.done .step-dot { background: var(--teal); }
+  .step-line { width: 2px; flex: 1; background: var(--line); margin-top: 2px; }
+  .step-body { padding-bottom: 22px; }
+  .step-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .step-detail { font-size: 13px; color: var(--ink-soft); }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .badge.resolve { background: var(--teal-bg); color: var(--teal); }
+  .badge.escalate { background: var(--rust-bg); color: var(--rust); }
+  .reply-box { margin-top: 18px; padding: 16px; background: #FAFAFB; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; white-space: pre-wrap; color: var(--ink); }
+  .copy-btn { background: none; border: 1px solid var(--line); color: var(--ink-soft); font-size: 12px; font-weight: 500; padding: 6px 12px; width: auto; margin-top: 10px; }
+  .copy-btn:hover { background: #F2F3F6; color: var(--ink); }
+  .empty-state { color: var(--ink-soft); font-size: 14px; text-align: center; padding: 60px 20px; }
+  .error-text { color: var(--rust); font-size: 13px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Support Copilot</h1>
+  <p>Describe a customer's issue and watch four agents work through it together — matching it to a known solution, drafting a reply, and deciding whether it's safe to send or needs a person.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Ticket details</h2>
+    <form id="ticket-form">
+      <div class="row">
+        <div class="field">
+          <label for="customer_name">Customer name</label>
+          <input type="text" id="customer_name" value="Jane Doe">
+        </div>
+        <div class="field">
+          <label for="product">Product</label>
+          <input type="text" id="product" value="iPhone">
+        </div>
+      </div>
+      <div class="field">
+        <label for="ticket_description">What's the issue?</label>
+        <textarea id="ticket_description" placeholder="e.g. My laptop screen keeps flickering and sometimes goes black."></textarea>
+      </div>
+      <div class="field">
+        <label for="ticket_priority">Priority</label>
+        <select id="ticket_priority">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+      <button type="submit" id="submit-btn">Run through the agents</button>
+      <div class="error-text" id="error-text"></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Agent trail</h2>
+    <div id="result-panel">
+      <div class="empty-state" id="empty-state">Submit a ticket to see how each agent handles it.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+const form = document.getElementById('ticket-form');
+const submitBtn = document.getElementById('submit-btn');
+const resultPanel = document.getElementById('result-panel');
+const errorText = document.getElementById('error-text');
+
+function renderTrail() {
+  resultPanel.innerHTML = `
+    <div class="trail">
+      <div class="step active" id="step-intent">
+        <div class="step-marker"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-label">Reading the ticket</div>
+          <div class="step-detail" id="detail-intent">Classifying intent…</div>
+        </div>
+      </div>
+      <div class="step" id="step-retrieval">
+        <div class="step-marker"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-label">Finding a matching solution</div>
+          <div class="step-detail" id="detail-retrieval">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="step-reply">
+        <div class="step-marker"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-label">Drafting a reply</div>
+          <div class="step-detail" id="detail-reply">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="step-escalation">
+        <div class="step-marker"><div class="step-dot">4</div></div>
+        <div class="step-body">
+          <div class="step-label">Deciding what happens next</div>
+          <div class="step-detail" id="detail-escalation">Waiting…</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function copyReply(text) {
+  navigator.clipboard.writeText(text);
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorText.textContent = '';
+
+  const ticket_description = document.getElementById('ticket_description').value.trim();
+  if (!ticket_description) {
+    errorText.textContent = 'Describe the issue before running the agents.';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Running…';
+  renderTrail();
+
+  const payload = {
+    customer_name: document.getElementById('customer_name').value || 'Customer',
+    product: document.getElementById('product').value || 'your product',
+    ticket_description,
+    ticket_priority: document.getElementById('ticket_priority').value,
+  };
+
+  try {
+    const res = await fetch('/api/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Something went wrong.');
+    }
+
+    const data = await res.json();
+
+    document.getElementById('step-intent').classList.add('done');
+    document.getElementById('detail-intent').textContent = `Secondary signal: ${data.predicted_intent}`;
+
+    document.getElementById('step-retrieval').classList.add('active', 'done');
+    document.getElementById('detail-retrieval').textContent =
+      `Matched "${data.matched_subject}" (confidence ${data.retrieval_similarity})`;
+
+    document.getElementById('step-reply').classList.add('active', 'done');
+    document.getElementById('detail-reply').textContent = 'Reply drafted below.';
+
+    document.getElementById('step-escalation').classList.add('active', 'done');
+    const isResolve = data.escalation_action === 'auto_resolve';
+    document.getElementById('detail-escalation').innerHTML = `
+      <span class="badge ${isResolve ? 'resolve' : 'escalate'}">
+        ${isResolve ? 'Auto-resolved' : 'Escalated to a human'}
+      </span>
+      <div>${data.escalation_reason}</div>
+    `;
+
+    const replyBox = document.createElement('div');
+    replyBox.className = 'reply-box';
+    replyBox.textContent = data.draft_reply;
+    document.getElementById('step-reply').querySelector('.step-body').appendChild(replyBox);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'Copy reply';
+    copyBtn.type = 'button';
+    copyBtn.onclick = () => {
+      copyReply(data.draft_reply);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => (copyBtn.textContent = 'Copy reply'), 1500);
+    };
+    document.getElementById('step-reply').querySelector('.step-body').appendChild(copyBtn);
+
+  } catch (err) {
+    errorText.textContent = err.message;
+    resultPanel.innerHTML = `<div class="empty-state" id="empty-state">Submit a ticket to see how each agent handles it.</div>`;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Run through the agents';
+  }
+});
+</script>
+
+</body>
+</html>
