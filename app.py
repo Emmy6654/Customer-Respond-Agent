@@ -13,7 +13,7 @@ intent_agent.train("data/tickets.csv")
 
 retrieval_agent = RetrievalAgent("data/knowledge_base.json")
 response_agent = ResponseAgent(mode="llm")
-escalation_agent = EscalationAgent(similarity_threshold=0.45)
+escalation_agent = EscalationAgent(similarity_threshold=0.35)
 print("All agents ready.")
 
 
